@@ -262,3 +262,5 @@ __pycache__/
 /Source/.NET Core/spike
 /Source/.NET Core/css/spike
 /Source/.NET Core/prepare_publish_cs-script.core.cmd
+/src/CSScriptLib/src/CSScriptLib/*.xml
+/src/CSScriptLib/src/CSScriptLib/output/*
