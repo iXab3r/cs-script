@@ -31,10 +31,12 @@
 #endregion License...
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Runtime.Serialization;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -145,14 +147,18 @@ namespace CSScriptLib
         /// <summary>
         /// Initialises a new instance of the <see cref="CompilerException"/> class.
         /// </summary>
-        public CompilerException() { }
+        public CompilerException()
+        {
+        }
 
         /// <summary>
         /// Initialises a new instance of the <see cref="CompilerException"/> class.
         /// </summary>
         /// <param name="info">The object that holds the serialized object data.</param>
         /// <param name="context">The contextual information about the source or destination.</param>
-        public CompilerException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+        public CompilerException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CompilerException"/> class.
@@ -207,11 +213,11 @@ namespace CSScriptLib
                         CoreExtensions.NormaliseFileReference(ref file, ref line);
 
                     compileErr.Append(file)
-                              .Append("(")
-                              .Append(line)
-                              .Append(",")
-                              .Append(err.Column)
-                              .Append("): ");
+                        .Append("(")
+                        .Append(line)
+                        .Append(",")
+                        .Append(err.Column)
+                        .Append("): ");
                 }
                 else
                 {
@@ -223,9 +229,9 @@ namespace CSScriptLib
                 else
                     compileErr.Append("error ");
                 compileErr.Append(err.ErrorNumber)
-                          .Append(": ")
-                          .Append(err.ErrorText.Trim(' '))
-                          .Append(Environment.NewLine);
+                    .Append(": ")
+                    .Append(err.ErrorText.Trim(' '))
+                    .Append(Environment.NewLine);
             }
 
             var retval = new CompilerException(compileErr.ToString());
@@ -255,7 +261,7 @@ namespace CSScriptLib
             CompilationUnitSyntax root = tree.GetCompilationUnitRoot();
             int pos = root.Usings.FullSpan.End;
 
-            return new[] { code.Substring(0, pos).TrimEnd(), code.Substring(pos) };
+            return new[] {code.Substring(0, pos).TrimEnd(), code.Substring(pos)};
         }
     }
 
@@ -277,9 +283,9 @@ namespace CSScriptLib
             // behave as Mono evaluator, which only referenced already loaded assemblies but not
             // file locations
             var assemblies = CompilerSettings.MetadataReferences
-                                             .OfType<PortableExecutableReference>()
-                                             .Select(r => Assembly.LoadFile(r.FilePath))
-                                             .ToArray();
+                .OfType<PortableExecutableReference>()
+                .Select(r => Assembly.LoadFile(r.FilePath))
+                .ToArray();
 
             return assemblies;
         }
@@ -367,7 +373,7 @@ namespace CSScriptLib
                 }
                 else
                 {
-                    var searchDirs = new[] { scriptFile?.GetDirName(), this.GetType().Assembly.Location().GetDirName() };
+                    var searchDirs = new[] {scriptFile?.GetDirName(), this.GetType().Assembly.Location().GetDirName()};
                     var parser = new ScriptParser(scriptFile ?? tempScriptFile, searchDirs, false);
 
                     var importedSources = new Dictionary<string, (int, string[])>(); // file, usings count, code lines
@@ -434,13 +440,13 @@ namespace CSScriptLib
                 //     }
 
                 var compilation = CSharpScript.Create(scriptText, scriptOptions)
-                                              .GetCompilation();
+                    .GetCompilation();
 
                 if (this.IsDebug)
                     compilation = compilation.WithOptions(compilation.Options.WithOptimizationLevel(OptimizationLevel.Debug));
 
                 compilation = compilation.WithOptions(compilation.Options.WithScriptClassName(info?.RootClass ?? Globals.RootClassName)
-                                                                         .WithOutputKind(OutputKind.DynamicallyLinkedLibrary));
+                    .WithOutputKind(OutputKind.DynamicallyLinkedLibrary));
 
                 using (var pdb = new MemoryStream())
                 using (var asm = new MemoryStream())
@@ -483,8 +489,9 @@ namespace CSScriptLib
 
                                 // the actual source contains an injected '#line' directive of
                                 // compiled with debug symbols so increment line after formatting
-                                error_location = $"{(source.HasText() ? source : "<script>")}({error_line},{ error_column}): ";
+                                error_location = $"{(source.HasText() ? source : "<script>")}({error_line},{error_column}): ";
                             }
+
                             message.AppendLine($"{error_location}error {diagnostic.Id}: {diagnostic.GetMessage()}");
                         }
 
@@ -557,34 +564,25 @@ namespace CSScriptLib
 
         List<Assembly> refAssemblies = new List<Assembly>();
 
+        private ConcurrentDictionary<Assembly, MetadataReference> metadataReferencesByAssembly = new ConcurrentDictionary<Assembly, MetadataReference>();
+        
         IEvaluator PrepareRefeAssemblies()
         {
             foreach (var assembly in FilterAssemblies(refAssemblies))
-                if (assembly != null)//this check is needed when trying to load partial name assemblies that result in null
+            {
+                if (assembly == null)
                 {
-                    if (!CompilerSettings.MetadataReferences.OfType<PortableExecutableReference>()
-                            .Any(r => r.FilePath.SamePathAs(assembly.Location)))
-                    {
-                        // Future assembly aliases support:
-                        // MetadataReference.CreateFromFile("asm.dll", new
-                        // MetadataReferenceProperties().WithAliases(new[] { "lib_a",
-                        // "external_lib_a" } })
-
-                        MetadataReference reference;    
-                        if (string.IsNullOrEmpty(assembly.Location))
-                        {
-                            var generator = new AssemblyGenerator();
-                            var assemblyBytes = generator.GenerateAssemblyBytes(assembly);
-                            reference = MetadataReference.CreateFromImage(assemblyBytes);
-                        }
-                        else
-                        {
-                            reference = MetadataReference.CreateFromFile(assembly.Location);
-                        }
-
-                        CompilerSettings = CompilerSettings.AddReferences(reference);
-                    }
+                    continue;
                 }
+
+                if (!CompilerSettings.MetadataReferences.OfType<PortableExecutableReference>()
+                        .Any(r => r.FilePath.SamePathAs(assembly.Location)))
+                {
+                    var reference = metadataReferencesByAssembly.GetOrAdd(assembly, ResolveMetadata);
+                    CompilerSettings = CompilerSettings.AddReferences(reference);
+                }
+            }
+            
             return this;
         }
 
@@ -613,6 +611,28 @@ namespace CSScriptLib
                 ReferenceDomainAssemblies();
 
             return this;
+        }
+
+        private static MetadataReference ResolveMetadata(Assembly assembly)
+        {
+            unsafe
+            {
+                if (!string.IsNullOrEmpty(assembly.Location) && File.Exists(assembly.Location))
+                {
+                    return MetadataReference.CreateFromFile(assembly.Location);
+                }
+                
+                if (assembly.TryGetRawMetadata(out var blob, out var blobLength))
+                {
+                    var moduleMetadata = ModuleMetadata.CreateFromMetadata((IntPtr) blob, blobLength);
+                    var assemblyMetadata = AssemblyMetadata.Create(moduleMetadata);
+                    var reference = assemblyMetadata.GetReference();
+                    return reference;
+                }
+
+                // should never happen in real-world scenarios
+                throw new ArgumentException($"Failed to create reference for assembly: {assembly}");
+            }
         }
     }
 }
