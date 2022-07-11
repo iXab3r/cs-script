@@ -59,35 +59,5 @@ namespace CSScripting {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] build {
-            get {
-                object obj = ResourceManager.GetObject("build", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] build_deps {
-            get {
-                object obj = ResourceManager.GetObject("build_deps", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] build_runtimeconfig {
-            get {
-                object obj = ResourceManager.GetObject("build_runtimeconfig", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
     }
 }

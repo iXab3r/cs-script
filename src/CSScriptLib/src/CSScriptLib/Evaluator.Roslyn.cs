@@ -49,6 +49,7 @@ using Microsoft.CodeAnalysis.Scripting;
 using csscript;
 using CSScripting;
 using CSScripting.CodeDom;
+using Lokad.ILPack;
 
 // <summary>
 //<package id="Microsoft.Net.Compilers" version="1.2.0-beta-20151211-01" targetFramework="net45" developmentDependency="true" />
@@ -549,12 +550,6 @@ namespace CSScriptLib
         /// </exception>
         public override IEvaluator ReferenceAssembly(Assembly assembly)
         {
-            //Microsoft.Net.Compilers.1.2.0 - beta
-            if (assembly.Location.IsEmpty())
-                throw new Exception(
-                    $"Current version of Roslyn-based evaluator does not support referencing assemblies " +
-                     "which are not loaded from the file location.");
-
             if (!refAssemblies.Contains(assembly))
                 refAssemblies.Add(assembly);
             return this;
@@ -568,17 +563,28 @@ namespace CSScriptLib
                 if (assembly != null)//this check is needed when trying to load partial name assemblies that result in null
                 {
                     if (!CompilerSettings.MetadataReferences.OfType<PortableExecutableReference>()
-                        .Any(r => r.FilePath.SamePathAs(assembly.Location)))
+                            .Any(r => r.FilePath.SamePathAs(assembly.Location)))
+                    {
                         // Future assembly aliases support:
                         // MetadataReference.CreateFromFile("asm.dll", new
                         // MetadataReferenceProperties().WithAliases(new[] { "lib_a",
                         // "external_lib_a" } })
-                        CompilerSettings = CompilerSettings.AddReferences(assembly);
+
+                        MetadataReference reference;    
+                        if (string.IsNullOrEmpty(assembly.Location))
+                        {
+                            var generator = new AssemblyGenerator();
+                            var assemblyBytes = generator.GenerateAssemblyBytes(assembly);
+                            reference = MetadataReference.CreateFromImage(assemblyBytes);
+                        }
+                        else
+                        {
+                            reference = MetadataReference.CreateFromFile(assembly.Location);
+                        }
+
+                        CompilerSettings = CompilerSettings.AddReferences(reference);
+                    }
                 }
-            var refs = CompilerSettings.MetadataReferences.OfType<PortableExecutableReference>()
-                                       .Select(r => r.FilePath.GetFileName())
-                                       .OrderBy(x => x)
-                                       .ToArray();
             return this;
         }
 

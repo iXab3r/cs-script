@@ -191,18 +191,6 @@ namespace CSScriptLib
     /// </summary>
     public partial class CSScript
     {
-        /// <summary>
-        /// Starts the build server.
-        /// </summary>
-        static public void StartBuildServer()
-            => Globals.StartBuildServer();
-
-        /// <summary>
-        /// Stops the build server.
-        /// </summary>
-        static public void StopBuildServer()
-            => Globals.StopBuildServer();
-
         static EvaluatorConfig evaluatorConfig = new EvaluatorConfig();
 
         /// <summary>
@@ -251,7 +239,6 @@ namespace CSScriptLib
                 switch (CSScript.EvaluatorConfig.Engine)
                 {
                     case EvaluatorEngine.Roslyn: return RoslynEvaluator;
-                    case EvaluatorEngine.CodeDom: return CodeDomEvaluator;
                     default: return null;
                 }
             }
@@ -331,27 +318,6 @@ namespace CSScriptLib
                     return roslynEvaluator.Value;
             }
         }
-
-        /// <summary>
-        /// Global instance of <see cref="CSScriptLib.CodeDomEvaluator"/>. This object is to be used for
-        /// dynamic loading of the  C# code by using CodeDom "compiler as service".
-        /// <para>If you need to use multiple instances of th evaluator then you will need to call
-        /// <see cref="CSScriptLib.IEvaluator"/>.Clone().
-        /// </para>
-        /// </summary>
-        /// <value> The <see cref="CSScriptLib.CodeDomEvaluator"/> instance.</value>
-        static public CodeDomEvaluator CodeDomEvaluator
-        {
-            get
-            {
-                if (EvaluatorConfig.Access == EvaluatorAccess.AlwaysCreate)
-                    return (CodeDomEvaluator)codeDomEvaluator.Value.Clone();
-                else
-                    return codeDomEvaluator.Value;
-            }
-        }
-
-        static Lazy<CodeDomEvaluator> codeDomEvaluator = new Lazy<CodeDomEvaluator>();
 
         /// <summary>
         /// Controls if ScriptCache should be used when script file loading is requested (CSScript.Load(...)). If set to true and the script file was previously compiled and already loaded

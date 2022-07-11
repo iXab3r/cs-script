@@ -21,73 +21,6 @@ namespace CSScripting
         // Roslyn still does not support anything else but `Submission#0` (17 Jul 2019) [update]
         // Roslyn now does support alternative class names (1 Jan 2020)
 
-        static internal void StartBuildServer(bool report = false)
-        {
-            if (Globals.BuildServerIsDeployed)
-                "dotnet".RunAsync($"\"{Globals.build_server}\" -start -csc:\"{Globals.csc}\"");
-
-            if (report)
-                PrintBuildServerInfo();
-        }
-
-        static internal void RestartBuildServer(bool report = false)
-        {
-            StopBuildServer();
-            StartBuildServer(report);
-        }
-
-        static internal void ResetBuildServer(bool report = false)
-        {
-            StopBuildServer();
-            while (BuildServer.IsServerAlive(null))
-                Thread.Sleep(500);
-            RemoveBuildServer();
-            DeployBuildServer();
-            StartBuildServer(report);
-        }
-
-        static internal void PrintBuildServerInfo()
-        {
-            if (Globals.BuildServerIsDeployed)
-            {    // CSScriptLib.CoreExtensions.RunAsync(
-                var alive = BuildServer.IsServerAlive(null);
-                Console.WriteLine($"Build server: {Globals.build_server.GetFullPath()}");
-
-                var pingResponse = BuildServer.PingRemoteInstance(null).Split('\n');
-                var pid = alive ?
-                    $" ({pingResponse.FirstOrDefault()})"
-                    : "";
-                Console.WriteLine($"Build server compiler: {(alive ? pingResponse[2] : "")}");
-                Console.WriteLine($"Build server is {(alive ? "" : "not ")}running{pid}.");
-            }
-            else
-            {
-                Console.WriteLine("Build server is not deployed.");
-                Console.WriteLine($"Expected deployment: {Globals.build_server.GetFullPath()}");
-            }
-        }
-
-        static internal void Install(bool installRequest)
-        {
-            if (Globals.BuildServerIsDeployed)
-            {    // CSScriptLib.CoreExtensions.RunAsync(
-                Console.WriteLine($"Build server: {Globals.build_server.GetFullPath()}");
-                Console.WriteLine($"Build server compiler: {Globals.csc.GetFullPath()}");
-                Console.WriteLine($"Build server is {(BuildServer.IsServerAlive(null) ? "" : "not ")}running.");
-            }
-            else
-            {
-                Console.WriteLine("Build server is not deployed.");
-                Console.WriteLine($"Expected deployment: {Globals.build_server.GetFullPath()}");
-            }
-        }
-
-        static internal void StopBuildServer()
-        {
-            if (Globals.BuildServerIsDeployed)
-                "dotnet".RunAsync($"\"{Globals.build_server}\" -stop");
-        }
-
         static internal string build_server
         {
             get
@@ -125,60 +58,11 @@ namespace CSScripting
         }
 
         /// <summary>
-        /// Deploys the build server on the target system.
-        /// </summary>
-        static public bool DeployBuildServer()
-        {
-            try
-            {
-                Directory.CreateDirectory(build_server.GetDirName());
-
-                File.WriteAllBytes(build_server, Resources.build);
-                File.WriteAllBytes(build_server.ChangeExtension(".deps.json"), Resources.build_deps);
-                File.WriteAllBytes(build_server.ChangeExtension(".runtimeconfig.json"), Resources.build_runtimeconfig);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            return File.Exists(build_server);
-        }
-
-        /// <summary>
         /// Pings the running instance of the build server.
         /// </summary>
         static public void Ping()
         {
             Console.WriteLine(BuildServer.PingRemoteInstance(null));
-        }
-
-        // static internal bool IsRemoteInstanceRunning() { try { using (var clientSocket = new
-        // TcpClient()) { return clientSocket .ConnectAsync(IPAddress.Loopback, port ?? serverPort)
-        // .Wait(TimeSpan.FromMilliseconds(20)); } } catch { return false; } }
-
-        /// <summary>
-        /// Gets a value indicating whether build server is deployed.
-        /// </summary>
-        /// <value><c>true</c> if build server is deployed; otherwise, <c>false</c>.</value>
-        static public bool BuildServerIsDeployed
-        {
-            get
-            {
-#if !DEBUG
-                if (!build_server.FileExists())
-#endif
-                try
-                {
-                    Directory.CreateDirectory(build_server.GetDirName());
-
-                    File.WriteAllBytes(build_server, Resources.build);
-                    File.WriteAllBytes(build_server.ChangeExtension(".deps.json"), Resources.build_deps);
-                    File.WriteAllBytes(build_server.ChangeExtension(".runtimeconfig.json"), Resources.build_runtimeconfig);
-                }
-                catch { }
-
-                return build_server.FileExists();
-            }
         }
 
         static string csc_file = Environment.GetEnvironmentVariable("css_csc_file");
