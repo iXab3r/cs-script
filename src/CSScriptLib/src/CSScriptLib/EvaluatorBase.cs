@@ -632,7 +632,8 @@ namespace CSScriptLib
             this.ReferenceAssemblyOf<T>();
             var asm = CompileCode(scriptText);
             var type = asm.FirstUserTypeAssignableFrom<T>();
-            return (T)asm.CreateObject(type.FullName, args);
+            var result = (T)asm.CreateObject(type.FullName, args);
+            return result;
         }
 
         /// <summary>

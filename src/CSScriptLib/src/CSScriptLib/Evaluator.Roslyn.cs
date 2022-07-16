@@ -270,6 +270,8 @@ namespace CSScriptLib
     /// <seealso cref="CSScriptLib.IEvaluator"/>
     public class RoslynEvaluator : EvaluatorBase<RoslynEvaluator>, IEvaluator
     {
+        private static readonly ConcurrentDictionary<Assembly, MetadataReference> MetadataReferencesByAssembly = new ConcurrentDictionary<Assembly, MetadataReference>();
+
         ScriptOptions compilerSettings = ScriptOptions.Default;
 
         /// <summary>
@@ -564,23 +566,29 @@ namespace CSScriptLib
 
         List<Assembly> refAssemblies = new List<Assembly>();
 
-        private ConcurrentDictionary<Assembly, MetadataReference> metadataReferencesByAssembly = new ConcurrentDictionary<Assembly, MetadataReference>();
-        
+       
         IEvaluator PrepareRefeAssemblies()
         {
-            foreach (var assembly in FilterAssemblies(refAssemblies))
+            var filteredAssemblies = FilterAssemblies(refAssemblies).ToArray();
+            foreach (var assembly in filteredAssemblies)
             {
                 if (assembly == null)
                 {
                     continue;
                 }
 
-                if (!CompilerSettings.MetadataReferences.OfType<PortableExecutableReference>()
-                        .Any(r => r.FilePath.SamePathAs(assembly.Location)))
+                var existingReference = CompilerSettings
+                    .MetadataReferences
+                    .OfType<PortableExecutableReference>()
+                    .FirstOrDefault(r => r.FilePath.SamePathAs(assembly.Location));
+
+                if (existingReference != null)
                 {
-                    var reference = metadataReferencesByAssembly.GetOrAdd(assembly, ResolveMetadata);
-                    CompilerSettings = CompilerSettings.AddReferences(reference);
+                    // already referenced
+                    continue;
                 }
+                var reference = MetadataReferencesByAssembly.GetOrAdd(assembly, ResolveMetadata);
+                CompilerSettings = CompilerSettings.AddReferences(reference);
             }
             
             return this;
