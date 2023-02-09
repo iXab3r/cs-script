@@ -270,8 +270,7 @@ namespace CSScriptLib
     /// <seealso cref="CSScriptLib.IEvaluator"/>
     public class RoslynEvaluator : EvaluatorBase<RoslynEvaluator>, IEvaluator
     {
-        private static readonly ConcurrentDictionary<Assembly, MetadataReference> MetadataReferencesByAssembly = new ConcurrentDictionary<Assembly, MetadataReference>();
-
+        private readonly MetadataReferencesCache referencesCache = new MetadataReferencesCache();
         ScriptOptions compilerSettings = ScriptOptions.Default;
 
         /// <summary>
@@ -587,7 +586,7 @@ namespace CSScriptLib
                     // already referenced
                     continue;
                 }
-                var reference = MetadataReferencesByAssembly.GetOrAdd(assembly, ResolveMetadata);
+                var reference = referencesCache.Get(assembly);
                 CompilerSettings = CompilerSettings.AddReferences(reference);
             }
             
@@ -619,28 +618,6 @@ namespace CSScriptLib
                 ReferenceDomainAssemblies();
 
             return this;
-        }
-
-        private static MetadataReference ResolveMetadata(Assembly assembly)
-        {
-            unsafe
-            {
-                if (!string.IsNullOrEmpty(assembly.Location) && File.Exists(assembly.Location))
-                {
-                    return MetadataReference.CreateFromFile(assembly.Location);
-                }
-                
-                if (assembly.TryGetRawMetadata(out var blob, out var blobLength))
-                {
-                    var moduleMetadata = ModuleMetadata.CreateFromMetadata((IntPtr) blob, blobLength);
-                    var assemblyMetadata = AssemblyMetadata.Create(moduleMetadata);
-                    var reference = assemblyMetadata.GetReference();
-                    return reference;
-                }
-
-                // should never happen in real-world scenarios
-                throw new ArgumentException($"Failed to create reference for assembly: {assembly}");
-            }
         }
     }
 }
