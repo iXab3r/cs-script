@@ -14,7 +14,7 @@ namespace CSScriptLib
     /// <summary>
     /// Holds MetadataReference for all known assemblies
     /// </summary>
-    public sealed class MetadataReferencesCache : MetadataReferenceResolver
+    public sealed class MetadataReferencesCache : MetadataReferenceResolver, IMetadataReferencesCache
     {
         private static readonly ConcurrentDictionary<Assembly, MetadataReference> MetadataReferencesByAssembly = new ConcurrentDictionary<Assembly, MetadataReference>();
         
