@@ -116,7 +116,7 @@ namespace CSScriptLib
         /// <summary>
         /// Default value of the <see cref="CSScriptLib.IEvaluator"/>. DebugBuild property
         /// controlling the generation of the debug symbols.
-        /// <para>In case of <see cref="CodeDomEvaluator"/> evaluator setting this property to <c>true</c>
+        /// <para>In case of CodeDomEvaluator evaluator setting this property to <c>true</c>
         /// will also set conditional compiling symbol `DEBUG`.</para><example>
         /// <code>
         ///CSScript.EvaluatorConfig.DebugBuild = true;

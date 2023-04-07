@@ -17,9 +17,7 @@
     <Authors>Oleg Shilo</Authors>
     <Description>CS-Script engine Class Library for .NET 5 (and higher)</Description>
     <Copyright>(C) 2018-2022 Oleg Shilo</Copyright>
-    <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/oleg-shilo/cs-script</PackageProjectUrl>
-    <PackageIconUrl></PackageIconUrl>
     <RepositoryUrl>https://github.com/oleg-shilo/cs-script.git</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>C#, scripting, script, dynamic, .NET. .NET Core</PackageTags>
