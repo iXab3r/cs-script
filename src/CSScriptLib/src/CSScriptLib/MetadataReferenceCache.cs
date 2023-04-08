@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
+using PoeShared.Scaffolding;
 
 namespace CSScriptLib
 {
@@ -18,26 +19,49 @@ namespace CSScriptLib
     {
         private static readonly ConcurrentDictionary<Assembly, MetadataReference> MetadataReferencesByAssembly = new ConcurrentDictionary<Assembly, MetadataReference>();
         
-        /// <summary>
-        /// Gets metadata by Assembly
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public MetadataReference Get(Assembly assembly)
         {
             return MetadataReferencesByAssembly.GetOrAdd(assembly, ResolveMetadata);
         }
 
-        /// <summary>
-        /// Gets metadata for all assemblies in current appdomain
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public IReadOnlyList<MetadataReference> GetDomainReferences()
         {
             var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
             return domainAssemblies.Select(Get).ToArray();
         }
-        
+
+        /// <inheritdoc />
+        public IReadOnlyList<MetadataReference> Resolve(params Assembly[] assemblies)
+        {
+            var assemblyNames = assemblies
+                .SelectMany(assembly => assembly.GetReferencedAssemblies().Concat(new[] {assembly.GetName()}))
+                .Where(x => !string.IsNullOrEmpty(x.Name))
+                .Distinct(new LambdaEqualityComparer<AssemblyName>((x, y) => x.FullName == y.FullName))
+                .ToImmutableHashSet();
+
+            //FIXME Read ONLY headers
+
+            return assemblyNames
+                .Select(x =>
+                {
+                    try
+                    {
+                        var assembly = Assembly.Load(x);
+                        return assembly;
+                    }
+                    catch (Exception e)
+                    {
+                        return null;
+                    }
+                    
+                    
+                }).Where(x => x != null)
+                
+                .Select(ResolveMetadata).ToArray();
+        }
+
         /// <inheritdoc />
         public override bool ResolveMissingAssemblies => false;
 

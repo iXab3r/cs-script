@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>CSScriptLib</AssemblyName>
     <PackageId>CS-Script</PackageId>
     <!--<NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>-->
@@ -113,6 +113,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <CustomToolNamespace>CSScripting</CustomToolNamespace>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\PoeShared\PoeShared.csproj" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="IF exist &quot;$(ProjectDir)out&quot; ( echo . ) ELSE ( md &quot;$(ProjectDir)out&quot;)&#xD;&#xA;&#xD;&#xA;copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(ProjectDir)output\$(TargetFileName)&quot;&#xD;&#xA;copy &quot;$(TargetDir)$(ProjectName).xml&quot; &quot;$(ProjectDir)output\$(ProjectName).xml&quot;&#xD;&#xA;rem copy &quot;$(ProjectDir)..\..\src\CSScriptLib.Client\Test.cs&quot; &quot;$(ProjectDir)output\Test.cs&quot;&#xD;&#xA;rem copy &quot;$(ProjectDir)..\..\src\CSScriptLib.Client\Test.cs&quot; &quot;$(ProjectDir)bin\$(ConfigurationName)\Test.cs&quot;&#xD;&#xA;&#xD;&#xA;" />

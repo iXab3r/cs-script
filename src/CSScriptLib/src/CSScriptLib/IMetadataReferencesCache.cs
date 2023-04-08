@@ -21,5 +21,12 @@ namespace CSScriptLib
         /// </summary>
         /// <returns></returns>
         IReadOnlyList<MetadataReference> GetDomainReferences();
+
+        /// <summary>
+        /// Resolves metadata for all assemblies and their references
+        /// </summary>
+        /// <param name="assemblies"></param>
+        /// <returns></returns>
+        IReadOnlyList<MetadataReference> Resolve(params Assembly[] assemblies);
     }
 }
